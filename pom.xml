@@ -35,10 +35,11 @@
 	</developers>
 	
 	<scm>
-		<connection>scm:hg:http://dbinit.hg.sourceforge.net:8000/hgroot/dbinit/dbinit</connection>
-		<developerConnection>scm:hg:ssh://dbinit.hg.sourceforge.net/hgroot/dbinit/dbinit</developerConnection>
-		<url>scm:hg:http://dbinit.hg.sourceforge.net:8000/hgroot/dbinit/dbinit</url>
-	</scm>
+                <connection>scm:git:git@github.com:dcoraboeuf/dbinit.git</connection>
+                <url>scm:git:git@github.com:dcoraboeuf/dbinit.git</url>
+                <developerConnection>scm:git:git@github.com:dcoraboeuf/dbinit.git</developerConnection>
+        </scm>
+
 
 	<dependencies>
 		<!-- Commons -->
@@ -126,7 +127,7 @@
 	
 	<profiles>
 		<profile>
-			<id>release</id>
+			<id>sonatype-oss-release</id>
 			<build>
 				<plugins>
 					<!-- Generation of sources JAR -->
