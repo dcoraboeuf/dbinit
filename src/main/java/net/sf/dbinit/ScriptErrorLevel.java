@@ -19,8 +19,19 @@ public enum ScriptErrorLevel {
 	LOG,
 
 	/**
-	 * Throws the error (default)
+	 * Throws the error
 	 */
-	THROWS;
+	THROWS,
+
+	/**
+	 * Performs a rollback
+	 */
+	ROLLBACK,
+
+	/**
+	 * Checks the script for a @Rollback section (default) and applies it if
+	 * found. If not found, throws an exception.
+	 */
+	AUTO;
 
 }

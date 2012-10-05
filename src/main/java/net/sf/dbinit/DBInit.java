@@ -1,5 +1,11 @@
 package net.sf.dbinit;
 
+import static org.apache.commons.lang.StringUtils.lowerCase;
+import static org.apache.commons.lang.StringUtils.startsWith;
+import static org.apache.commons.lang.StringUtils.stripEnd;
+import static org.apache.commons.lang.StringUtils.substring;
+import static org.apache.commons.lang.StringUtils.trim;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -64,11 +70,16 @@ public class DBInit implements Runnable {
 			}
 		}
 	}
+	
+	/**
+	 * Rollback section
+	 */
+	private static final String SECTION_ROLLBACK = "rollback";
 
 	/**
 	 * Logger
 	 */
-	private final static Logger log = LoggerFactory.getLogger(DBInit.class);
+	private static final Logger log = LoggerFactory.getLogger(DBInit.class);
 
 	/**
 	 * Reads resource as a string
@@ -134,12 +145,13 @@ public class DBInit implements Runnable {
 	 * Runs one script which is found using a resource path
 	 * @param connection Connection to use
 	 * @param scriptPath Resource path to the script
+	 * @return <code>true</code> if the script was applied successfully, <code>false</code> if there was an error and the script was rolled back
 	 * @throws SQLException If an error occurs while executing the script
 	 * @see #readResource(String)
 	 */
-	public void runScript(Connection connection, String scriptPath) throws SQLException {
+	public boolean runScript(Connection connection, String scriptPath) throws SQLException {
 		// Error behaviour
-		ScriptErrorLevel errorLevel = ScriptErrorLevel.THROWS;
+		ScriptErrorLevel errorLevel = ScriptErrorLevel.AUTO;
 		if (StringUtils.indexOf(scriptPath, "?") > 0) {
 			String query = StringUtils.substringAfter(scriptPath, "?");
 			scriptPath = StringUtils.substringBefore(scriptPath, "?");
@@ -156,9 +168,11 @@ public class DBInit implements Runnable {
 		Statement st = connection.createStatement();
 		try {
 			// Slices all statements
-			List<String> statements = splitStatements(sql);
+			DBStatements statements = readStatements(sql);
+			// Gets the default section
+			DBSection defaultSection = statements.getDefaultSection();
 			// Executes all statements
-			for(String sqlStatement : statements) {
+			for(String sqlStatement : defaultSection.getStatements()) {
 				try {
 					st.execute(sqlStatement);
 				} catch (SQLException ex) {
@@ -170,12 +184,44 @@ public class DBInit implements Runnable {
 							// Logs the error
 							log.warn(String.format("Cannot execute statement:%n%s", sqlStatement), ex);
 							break;
+						case ROLLBACK:
+							connection.rollback();
+							return false;
 						case THROWS:
-						default:
 							throw ex;
+						case AUTO:
+						default:
+							log.debug(String.format("Looking for rollback section: %s", SECTION_ROLLBACK));
+							// Performs a normal rollback
+							connection.rollback();
+							// Gets a rollback section
+							DBSection rollbackSection = statements.getSection(SECTION_ROLLBACK);
+							if (rollbackSection != null) {
+								log.debug("Applying rollback section");
+								for(String rollbackStatement : rollbackSection.getStatements()) {
+									try {
+										st.execute(rollbackStatement);
+									} catch (SQLException rollbackException) {
+										throw new SQLException(
+												String.format(
+														"Could not rollback after error. Rollback exception is: %s",
+														rollbackException),
+												ex);
+									}
+								}
+								// Rollback done
+								log.debug("Rollback applied");
+								return false;
+							}
+							// No rollback section, throws the exception
+							else {
+								throw ex;
+							}
 					}
 				}
 			}
+			// OK
+			return true;
 		} finally {
 			st.close();
 		}
@@ -184,24 +230,38 @@ public class DBInit implements Runnable {
 	/**
 	 * Splits all statements
 	 * @param sql Initial SQL file
-	 * @return List of SQL statements
+	 * @return List of SQL statements, indexed by sections
 	 */
-	public static List<String> splitStatements(String sql) {
-		ArrayList<String> statements = new ArrayList<String>();
+	public static DBStatements readStatements(String sql) {
+		DBStatements statements = new DBStatements();
 		BufferedReader reader = new BufferedReader(new StringReader(sql));
 		try {
 			try {
 				String line;
 				StringBuffer statement = new StringBuffer();
+				DBSection section = DBSection.createDefault();
+				statements.addSection(section);
 				while ((line = reader.readLine()) != null) {
-					if (StringUtils.isNotBlank(line) && !line.startsWith("--")) {
-						if (line.endsWith(";")) {
-							line = StringUtils.stripEnd(line, ";");
-							statement.append(line);
-							statements.add(statement.toString());
-							statement.setLength(0);
-						} else {
-							statement.append(line).append(" ");
+					if (StringUtils.isNotBlank(line)) {
+						// Comment
+						if (line.startsWith("--")) {
+							String commentValue = trim(substring(line, 2));
+							if (startsWith(commentValue, "@")) {
+								String sectionName = trim(substring(commentValue, 1));
+								section = new DBSection(lowerCase(sectionName));
+								statements.addSection(section);
+							}
+						}
+						// Anything else
+						else {
+							if (line.endsWith(";")) {
+								line = stripEnd(line, ";");
+								statement.append(line);
+								section.addStatement(statement.toString());
+								statement.setLength(0);
+							} else {
+								statement.append(line).append(" ");
+							}
 						}
 					}
 				}
@@ -299,7 +359,10 @@ public class DBInit implements Runnable {
 		try {
 			// Read the update
 			String updatePath = MessageFormat.format(resourceUpdate, patch);
-			runScript(connection, updatePath);
+			boolean success = runScript(connection, updatePath);
+			if (success) {
+				setVersion(connection, patch);
+			}
 			// Ok
 			log.info("End of patch " + patch);
 		} catch (Exception ex) {
@@ -350,9 +413,11 @@ public class DBInit implements Runnable {
 				// Reads the batch file
 				String sql = readResource(resourceInitialization);
 				// Slices all statements
-				List<String> statements = splitStatements(sql);
+				DBStatements statements = readStatements(sql);
+				// Gets the default section
+				DBSection defaultSection = statements.getDefaultSection();
 				// Executes all statements
-				for(String sqlStatement : statements) {
+				for(String sqlStatement : defaultSection.getStatements()) {
 					log.debug("Executing\n" + sqlStatement);
 					st.execute(sqlStatement);
 				}
@@ -572,7 +637,6 @@ public class DBInit implements Runnable {
 					if (currentVersion == null || !currentVersion.equals(version)) {
 						log.info("DB must be patched");
 						applyPatches(connection, currentVersion);
-						setVersion(connection);
 						ok = true;
 					} else {
 						log.info("DB version is ok ; no change is required");
@@ -581,7 +645,7 @@ public class DBInit implements Runnable {
 				} else {
 					log.info("The DB must be created");
 					createTables(connection);
-					setVersion(connection);
+					setVersion(connection, version);
 					ok = true;
 				}
 				// Post scripts
@@ -706,10 +770,11 @@ public class DBInit implements Runnable {
 
 	/**
 	 * Changes the version
-	 * @param connection The version to set.
+	 * @param connection The connection to use.
+	 * @param theVersion The version to set.
 	 * @throws SQLException
 	 */
-	protected void setVersion(Connection connection) throws SQLException {
+	protected void setVersion(Connection connection, int theVersion) throws SQLException {
 		Statement st = connection.createStatement();
 		try {
 			// Delete all previous lines
@@ -721,7 +786,7 @@ public class DBInit implements Runnable {
 		PreparedStatement ps = connection.prepareStatement("INSERT INTO " + versionTable + " (" + versionColumnName
 				+ ", " + versionColumnTimestamp + ") VALUES (?, ?)");
 		try {
-			ps.setInt(1, version);
+			ps.setInt(1, theVersion);
 			ps.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
 			ps.executeUpdate();
 		} finally {

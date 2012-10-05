@@ -3,7 +3,6 @@ package net.sf.dbinit;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.List;
 
 import org.apache.commons.lang.Validate;
 
@@ -16,17 +15,20 @@ public class DBInitScriptAction implements DBInitAction {
 		this.path = path;
 	}
 
+	// FIXME Uses the DBInit instance for execution
 	@Override
 	public void run(Connection connection) throws SQLException {
 		// Gets the SQL
 		String sql = DBInit.readResource(path);
 		// Splits the statements
-		List<String> statements = DBInit.splitStatements(sql);
+		DBStatements statements = DBInit.readStatements(sql);
+		// Gets the default section
+		DBSection defaultSection = statements.getDefaultSection();
 		// Applies the update
 		Statement st = connection.createStatement();
 		try {
 			// Executes all statements
-			for(String sqlStatement : statements) {
+			for(String sqlStatement : defaultSection.getStatements()) {
 				st.execute(sqlStatement);
 			}
 		} finally {
