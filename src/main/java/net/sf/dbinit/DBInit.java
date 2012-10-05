@@ -150,18 +150,6 @@ public class DBInit implements Runnable {
 	 * @see #readResource(String)
 	 */
 	public boolean runScript(Connection connection, String scriptPath) throws SQLException {
-		// Error behaviour
-		ScriptErrorLevel errorLevel = ScriptErrorLevel.AUTO;
-		if (StringUtils.indexOf(scriptPath, "?") > 0) {
-			String query = StringUtils.substringAfter(scriptPath, "?");
-			scriptPath = StringUtils.substringBefore(scriptPath, "?");
-			Map<String, String> params = parseQuery(query);
-			String errorValue = params.get("error");
-			if (errorValue != null) {
-				errorValue = StringUtils.upperCase(errorValue);
-				errorLevel = ScriptErrorLevel.valueOf(errorValue);
-			}
-		}
 		// Gets the SQL content
 		String sql = readResource(scriptPath);
 		// Applies the update
@@ -176,47 +164,31 @@ public class DBInit implements Runnable {
 				try {
 					st.execute(sqlStatement);
 				} catch (SQLException ex) {
-					switch (errorLevel) {
-						case IGNORE:
-							// Does nothing
-							break;
-						case LOG:
-							// Logs the error
-							log.warn(String.format("Cannot execute statement:%n%s", sqlStatement), ex);
-							break;
-						case ROLLBACK:
-							connection.rollback();
-							return false;
-						case THROWS:
-							throw ex;
-						case AUTO:
-						default:
-							log.debug(String.format("Looking for rollback section: %s", SECTION_ROLLBACK));
-							// Performs a normal rollback
-							connection.rollback();
-							// Gets a rollback section
-							DBSection rollbackSection = statements.getSection(SECTION_ROLLBACK);
-							if (rollbackSection != null) {
-								log.debug("Applying rollback section");
-								for(String rollbackStatement : rollbackSection.getStatements()) {
-									try {
-										st.execute(rollbackStatement);
-									} catch (SQLException rollbackException) {
-										throw new SQLException(
-												String.format(
-														"Could not rollback after error. Rollback exception is: %s",
-														rollbackException),
-												ex);
-									}
-								}
-								// Rollback done
-								log.debug("Rollback applied");
-								return false;
+					log.debug(String.format("Looking for rollback section: %s", SECTION_ROLLBACK));
+					// Performs a normal rollback
+					connection.rollback();
+					// Gets a rollback section
+					DBSection rollbackSection = statements.getSection(SECTION_ROLLBACK);
+					if (rollbackSection != null) {
+						log.debug("Applying rollback section");
+						for(String rollbackStatement : rollbackSection.getStatements()) {
+							try {
+								st.execute(rollbackStatement);
+							} catch (SQLException rollbackException) {
+								throw new SQLException(
+										String.format(
+												"Could not rollback after error. Rollback exception is: %s",
+												rollbackException),
+										ex);
 							}
-							// No rollback section, throws the exception
-							else {
-								throw ex;
-							}
+						}
+						// Rollback done
+						log.debug("Rollback applied");
+						return false;
+					}
+					// No rollback section, throws the exception
+					else {
+						throw ex;
 					}
 				}
 			}
