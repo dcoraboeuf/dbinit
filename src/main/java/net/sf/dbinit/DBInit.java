@@ -52,21 +52,20 @@ public class DBInit implements DBExecutor, Runnable {
 	 * @author Damien Coraboeuf
 	 */
 	protected class ShutdownTask implements Runnable {
+
 		@Override
 		public void run() {
-			if (StringUtils.isNotBlank(sqlAtShutdown)) {
+			try {
+				// Get a connection
+				Connection connection = getConnection();
 				try {
-					// Get a connection
-					Connection connection = getConnection();
-					try {
-						log.info("Executing " + sqlAtShutdown + " at shutdown");
-						connection.createStatement().execute(sqlAtShutdown);
-					} finally {
-						connection.close();
-					}
-				} catch (Exception th) {
-					log.error("Cannot execute SQL at shutdown", th);
+					log.info("Executing " + sqlAtShutdown + " at shutdown");
+					connection.createStatement().execute(sqlAtShutdown);
+				} finally {
+					connection.close();
 				}
+			} catch (Exception th) {
+				log.error("Cannot execute SQL at shutdown", th);
 			}
 		}
 	}
@@ -588,7 +587,9 @@ public class DBInit implements DBExecutor, Runnable {
 				}
 			}
 			// Shutdown
-			Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownTask(), "SQL at Shutdown"));
+			if (StringUtils.isNotBlank(sqlAtShutdown)) {
+				Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownTask(), "SQL at Shutdown"));
+			}
 			// Get a connection
 			Connection connection = getConnection();
 			// Transaction
