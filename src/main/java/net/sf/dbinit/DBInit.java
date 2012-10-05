@@ -71,6 +71,11 @@ public class DBInit implements DBExecutor, Runnable {
 	}
 	
 	/**
+	 * System property to set in order to define a profile. Value is {@value}.
+	 */
+	public static final String SYSTEM_PROFILE = "dbinit.profile";
+	
+	/**
 	 * Rollback section
 	 */
 	private static final String SECTION_ROLLBACK = "rollback";
@@ -158,7 +163,7 @@ public class DBInit implements DBExecutor, Runnable {
 			// Slices all statements
 			DBStatements statements = readStatements(sql);
 			// Gets the default section
-			DBSection defaultSection = statements.getDefaultSection();
+			DBSection defaultSection = getSection(statements);
 			// Executes all statements
 			for(String sqlStatement : defaultSection.getStatements()) {
 				try {
@@ -168,7 +173,7 @@ public class DBInit implements DBExecutor, Runnable {
 					// Performs a normal rollback
 					connection.rollback();
 					// Gets a rollback section
-					DBSection rollbackSection = statements.getSection(SECTION_ROLLBACK);
+					DBSection rollbackSection = getRollbackSection(statements);
 					if (rollbackSection != null) {
 						log.debug("Applying rollback section");
 						for(String rollbackStatement : rollbackSection.getStatements()) {
@@ -197,6 +202,24 @@ public class DBInit implements DBExecutor, Runnable {
 		} finally {
 			st.close();
 		}
+	}
+
+
+	/**
+	 * Gets the section to execute when rolling back, according to the profile.
+	 * @param statements All sections
+	 * @return Section to execute
+	 * @see #getProfile()
+	 */
+	protected DBSection getRollbackSection(DBStatements statements) {
+		String profile = getProfile();
+		if (StringUtils.isNotBlank(profile)) {
+			DBSection section = statements.getSection(String.format("%s-%s", profile, SECTION_ROLLBACK));
+			if (section != null) {
+				return section;
+			}
+		}
+		return statements.getSection(SECTION_ROLLBACK);
 	}
 
 	/**
@@ -387,7 +410,7 @@ public class DBInit implements DBExecutor, Runnable {
 				// Slices all statements
 				DBStatements statements = readStatements(sql);
 				// Gets the default section
-				DBSection defaultSection = statements.getDefaultSection();
+				DBSection defaultSection = getSection(statements);
 				// Executes all statements
 				for(String sqlStatement : defaultSection.getStatements()) {
 					log.debug("Executing\n" + sqlStatement);
@@ -401,6 +424,23 @@ public class DBInit implements DBExecutor, Runnable {
 		} catch (SQLException ex) {
 			throw new DBInitSQLException("Creation of tables", ex);
 		}
+	}
+
+	/**
+	 * Gets the section to execute according to the profile.
+	 * @param statements All sections
+	 * @return Section to execute
+	 * @see #getProfile()
+	 */
+	protected DBSection getSection(DBStatements statements) {
+		String profile = getProfile();
+		if (StringUtils.isNotBlank(profile)) {
+			DBSection section = statements.getSection(profile);
+			if (section != null) {
+				return section;
+			}
+		}
+		return statements.getDefaultSection();
 	}
 
 	/**
@@ -568,6 +608,14 @@ public class DBInit implements DBExecutor, Runnable {
 	 */
 	public String getVersionTable() {
 		return versionTable;
+	}
+	
+	/**
+	 * Gets the profile to apply by using the {@link #SYSTEM_PROFILE} system
+	 * property.
+	 */
+	protected String getProfile() {
+		return getProperty(SYSTEM_PROFILE);
 	}
 
 	/**
