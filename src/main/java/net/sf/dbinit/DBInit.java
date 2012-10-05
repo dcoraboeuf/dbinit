@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
  * @author dcoraboe
  *
  */
-public class DBInit implements Runnable {
+public class DBInit implements DBExecutor, Runnable {
 
 	/**
 	 * Task which is executed at shutdwon.
@@ -149,6 +149,7 @@ public class DBInit implements Runnable {
 	 * @throws SQLException If an error occurs while executing the script
 	 * @see #readResource(String)
 	 */
+	@Override
 	public boolean runScript(Connection connection, String scriptPath) throws SQLException {
 		// Gets the SQL content
 		String sql = readResource(scriptPath);
@@ -655,7 +656,7 @@ public class DBInit implements Runnable {
         if (actions != null) {
         	for (DBInitAction action : actions) {
                 log.info(" - running " + action);
-				action.run (connection);
+				action.run (this, connection);
 			}
         }
 	}

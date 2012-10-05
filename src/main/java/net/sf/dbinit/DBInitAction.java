@@ -5,6 +5,6 @@ import java.sql.SQLException;
 
 public interface DBInitAction {
 
-	void run(Connection connection) throws SQLException;
+	void run(DBExecutor executor, Connection connection) throws SQLException;
 
 }
