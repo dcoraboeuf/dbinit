@@ -14,10 +14,12 @@ DBInit expects:
 
 A SQL script must be available on the classpath. It may contain any SQL code, but following declaration (or similar) is mandatory:
 
+```
  CREATE TABLE VERSION (
  	VALUE INTEGER NOT NULL,
  	UPDATE_DATE TIMESTAMP NOT NULL
  );
+```
 
 The `VERSION` table will contain the update information.
 
@@ -25,9 +27,9 @@ The `VERSION` table will contain the update information.
 
 The update script can have any name, but must contain a patch number in them, starting from 1. For example: `update.1.sql`, `update.2.sql`, ...
 
-=== Initialisation ===
+# Initialisation
 
-The {{{DBInit}}} class must be initialised with some properties:
+The `DBInit` class must be initialised with some properties:
 
 ||properties||Properties||Optional||Additional configuration properties (see below)||
 ||sqlAtShutdown||String||Optional||Piece of SQL code to execute at JVM shutdown||
@@ -47,13 +49,13 @@ The {{{DBInit}}} class must be initialised with some properties:
 
 and called:
 
-{{{
+```
 init.run();
-}}}
+```
 
-For example, this may be achieved by declaring {{{DBInit}}} as a singleton in [http://www.springframework.org Spring]:
+For example, this may be achieved by declaring `DBInit` as a singleton in [http://www.springframework.org Spring]:
 
-{{{
+```
 <bean class="net.sf.dbinit.DBInit" init-method="run">
 	<property name="version" value="11" />
 	<property name="jdbcDataSource" ref="DataSource" />
@@ -63,18 +65,18 @@ For example, this may be achieved by declaring {{{DBInit}}} as a singleton in [h
 	<property name="resourceInitialization" value="/path/db/init.sql" />
 	<property name="resourceUpdate" value="/path/db/update.{0}.sql" />
 </bean>
-}}}
+```
 
-=== Rollback ===
+# Rollback
 
 By default, if the execution of a patch fails, the corresponding exception is thrown and the database remains in an indeterminate
 state: the new version of the database is the number of the last successful patch but the patch in error may have been only partially
 applied.
 
-In a patch one, one can declare a {{{rollback}}} section that will be executed only when the normal execution of the patch has failed. Such a section is
+In a patch one, one can declare a `rollback` section that will be executed only when the normal execution of the patch has failed. Such a section is
 introduced as follows:
 
-{{{
+```
 ...
 SQL statements to execute normally
 ...
@@ -82,15 +84,15 @@ SQL statements to execute normally
 ...
 SQL statements to execute when rolling back the changes
 ...
-}}}
+```
 
 === Profiles ===
 
 The SQL syntax may differ from one database to the other. One can use profiles in order to specify different sets of statements to be executed.
 
-A set of statements is introduced using the same syntax than for the {{{rollback}}}:
+A set of statements is introduced using the same syntax than for the `rollback`:
 
-{{{
+```
 ...
 SQL statements to execute by default
 ...
@@ -98,15 +100,15 @@ SQL statements to execute by default
 ...
 SQL statements to execute when 'myprofile' is active
 ...
-}}}
+```
 
 The profile is activated using either:
-* the {{{DBInit.setProperties(...)}}}
-* the {{{dbinit.profile}}} system property
+* the `DBInit.setProperties(...)`
+* the `dbinit.profile` system property
 
 Rollback sections can also be enabled at profile level if needed:
 
-{{{
+```
 ...
 SQL statements to execute by default
 ...
@@ -122,6 +124,6 @@ SQL statements to execute when rolling back the changes when no profile is defin
 ...
 SQL statements to execute when rolling back the changes when 'myprofile' is active
 ...
-}}}
+```
 
 Several profiles may be defined per file.
