@@ -31,19 +31,92 @@ The update script can have any name, but must contain a patch number in them, st
 
 The `DBInit` class must be initialised with some properties:
 
-||properties||Properties||Optional||Additional configuration properties (see below)||
-||sqlAtShutdown||String||Optional||Piece of SQL code to execute at JVM shutdown||
-||resourceInitialization||String||Required||Resource path to the initialisation SQL code||
-||resourceUpdate||String||Required||Resource pattern path to the update scripts. The path must include {0} for the patch number placeholder.||
-||version||int||Required||Version number. It starts from 0, for a database that does not need to be patched. It must then incremented by 1 units.||
-||versionTable||String||Required||Name of the table that contains the version information (VERSION in the samples)||
-||versionColumnName||String||Required||Column that contains the version information (VALUE in the samples)||
-||versionColumnTimestamp||String||Required||Column that contains the version timestamp(UPDATE_DATE in the samples)||
-||jdbcDriver||String||Optional*||Qualified class name of the JDBC driver to use||
-||jdbcURL||String||Optional*||JDBC URL||
-||jdbcUser||String||Optional*||JDBC connection user||
-||jdbcPassword||String||Optional*||JDBC connection password||
-||jdbcDataSource||!DataSource||Optional*||JDBC datasource||
+<table>
+	<tr>
+		<th>Property</th>
+		<th>Type</th>
+		<th>Scope</th>
+		<th>Description</th>
+	</tr>
+	<tr>
+		<td>properties</td>
+		<td>Properties</td>
+		<td>Optional</td>
+		<td>Additional configuration properties (see below)</td>
+	</tr>
+	<tr>
+		<td>sqlAtShutdown</td>
+		<td>String</td>
+		<td>Optional</td>
+		<td>Piece of SQL code to execute at JVM shutdown</td>
+	</tr>
+	<tr>
+		<td>resourceInitialization</td>
+		<td>String</td>
+		<td>Required</td>
+		<td>Resource path to the initialisation SQL code</td>
+	</tr>
+	<tr>
+		<td>resourceUpdate</td>
+		<td>String</td>
+		<td>Required</td>
+		<td>Resource pattern path to the update scripts. The path must include {0} for the patch number placeholder.</td>
+	</tr>
+	<tr>
+		<td>version</td>
+		<td>int</td>
+		<td>Required</td>
+		<td>Version number. It starts from 0, for a database that does not need to be patched. It must then incremented by 1 units.</td>
+	</tr>
+	<tr>
+		<td>versionTable</td>
+		<td>String</td>
+		<td>Required</td>
+		<td>Name of the table that contains the version information (VERSION in the samples)</td>
+	</tr>
+	<tr>
+		<td>versionColumnName</td>
+		<td>String</td>
+		<td>Required</td>
+		<td>Column that contains the version information (VALUE in the samples)</td>
+	</tr>
+	<tr>
+		<td>versionColumnTimestamp</td>
+		<td>String</td>
+		<td>Required</td>
+		<td>Column that contains the version timestamp(UPDATE_DATE in the samples)</td>
+	</tr>
+	<tr>
+		<td>jdbcDriver</td>
+		<td>String</td>
+		<td>Optional*</td>
+		<td>Qualified class name of the JDBC driver to use</td>
+	</tr>
+	<tr>
+		<td>jdbcURL</td>
+		<td>String</td>
+		<td>Optional*</td>
+		<td>JDBC URL</td>
+	</tr>
+	<tr>
+		<td>jdbcUser</td>
+		<td>String</td>
+		<td>Optional*</td>
+		<td>JDBC connection user</td>
+	</tr>
+	<tr>
+		<td>jdbcPassword</td>
+		<td>String</td>
+		<td>Optional*</td>
+		<td>JDBC connection password</td>
+	</tr>
+	<tr>
+		<td>jdbcDataSource</td>
+		<td>DataSource</td>
+		<td>Optional*</td>
+		<td>JDBC datasource</td>
+	</tr>
+</table>
 
 (* either the datasource or the full driver/url/user/password is expected)
 
@@ -86,7 +159,7 @@ SQL statements to execute when rolling back the changes
 ...
 ```
 
-=== Profiles ===
+# Profiles
 
 The SQL syntax may differ from one database to the other. One can use profiles in order to specify different sets of statements to be executed.
 
