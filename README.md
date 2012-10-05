@@ -64,3 +64,64 @@ For example, this may be achieved by declaring {{{DBInit}}} as a singleton in [h
 	<property name="resourceUpdate" value="/path/db/update.{0}.sql" />
 </bean>
 }}}
+
+=== Rollback ===
+
+By default, if the execution of a patch fails, the corresponding exception is thrown and the database remains in an indeterminate
+state: the new version of the database is the number of the last successful patch but the patch in error may have been only partially
+applied.
+
+In a patch one, one can declare a {{{rollback}}} section that will be executed only when the normal execution of the patch has failed. Such a section is
+introduced as follows:
+
+{{{
+...
+SQL statements to execute normally
+...
+-- @rollback
+...
+SQL statements to execute when rolling back the changes
+...
+}}}
+
+=== Profiles ===
+
+The SQL syntax may differ from one database to the other. One can use profiles in order to specify different sets of statements to be executed.
+
+A set of statements is introduced using the same syntax than for the {{{rollback}}}:
+
+{{{
+...
+SQL statements to execute by default
+...
+-- @myprofile
+...
+SQL statements to execute when 'myprofile' is active
+...
+}}}
+
+The profile is activated using either:
+* the {{{DBInit.setProperties(...)}}}
+* the {{{dbinit.profile}}} system property
+
+Rollback sections can also be enabled at profile level if needed:
+
+{{{
+...
+SQL statements to execute by default
+...
+-- @myprofile
+...
+SQL statements to execute when 'myprofile' is active
+...
+-- @rollback
+...
+SQL statements to execute when rolling back the changes when no profile is defined
+...
+-- @myprofile-rollback
+...
+SQL statements to execute when rolling back the changes when 'myprofile' is active
+...
+}}}
+
+Several profiles may be defined per file.
