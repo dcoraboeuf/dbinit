@@ -207,7 +207,7 @@ In order to perform a release, execute the following tasks:
 
 * Prepare the release
 ```
-mvn release:prepare -Dresume=false -P sonatype-oss-release
+mvn release:prepare -Dresume=false -P release
 ```
 * Enter the GPG passphrase when prompted
 * Performing the release
@@ -216,6 +216,5 @@ mvn release:perform
 ```
 
 See also the following resources about releasing and managing GPG signatures:
-* https://docs.sonatype.org/display/Repository/Sonatype+OSS+Maven+Repository+Usage+Guide
-* https://docs.sonatype.org/display/Repository/How+To+Generate+PGP+Signatures+With+Maven
-* http://jira.codehaus.org/browse/MGPG-9
+
+* http://central.sonatype.org/pages/apache-maven.html
