@@ -6,6 +6,7 @@ DBInit is a Java service API that allows the incremental update of a database at
 # Quick Start
 
 DBInit expects:
+
 * an initialisation script for the database
 * an optional list of update scripts
 * a DBInit call
@@ -14,12 +15,10 @@ DBInit expects:
 
 A SQL script must be available on the classpath. It may contain any SQL code, but following declaration (or similar) is mandatory:
 
-```
- CREATE TABLE VERSION (
- 	VALUE INTEGER NOT NULL,
- 	UPDATE_DATE TIMESTAMP NOT NULL
- );
-```
+     CREATE TABLE VERSION (
+        VALUE INTEGER NOT NULL,
+        UPDATE_DATE TIMESTAMP NOT NULL
+     );
 
 The `VERSION` table will contain the update information.
 
@@ -122,23 +121,19 @@ The `DBInit` class must be initialised with some properties:
 
 and called:
 
-```
-init.run();
-```
+    init.run();
 
 For example, this may be achieved by declaring `DBInit` as a singleton in [http://www.springframework.org Spring]:
 
-```
-<bean class="net.sf.dbinit.DBInit" init-method="run">
-	<property name="version" value="11" />
-	<property name="jdbcDataSource" ref="DataSource" />
-	<property name="versionTable" value="VERSION" />
-	<property name="versionColumnName" value="VALUE" />
-	<property name="versionColumnTimestamp" value="UPDATE_DATE" />
-	<property name="resourceInitialization" value="/path/db/init.sql" />
-	<property name="resourceUpdate" value="/path/db/update.{0}.sql" />
-</bean>
-```
+    <bean class="net.sf.dbinit.DBInit" init-method="run">
+        <property name="version" value="11" />
+        <property name="jdbcDataSource" ref="DataSource" />
+        <property name="versionTable" value="VERSION" />
+        <property name="versionColumnName" value="VALUE" />
+        <property name="versionColumnTimestamp" value="UPDATE_DATE" />
+        <property name="resourceInitialization" value="/path/db/init.sql" />
+        <property name="resourceUpdate" value="/path/db/update.{0}.sql" />
+    </bean>
 
 # Rollback
 
@@ -149,15 +144,13 @@ applied.
 In a patch one, one can declare a `rollback` section that will be executed only when the normal execution of the patch has failed. Such a section is
 introduced as follows:
 
-```
-...
-SQL statements to execute normally
-...
--- @rollback
-...
-SQL statements to execute when rolling back the changes
-...
-```
+    ...
+    SQL statements to execute normally
+    ...
+    -- @rollback
+    ...
+    SQL statements to execute when rolling back the changes
+    ...
 
 # Profiles
 
@@ -165,39 +158,36 @@ The SQL syntax may differ from one database to the other. One can use profiles i
 
 A set of statements is introduced using the same syntax than for the `rollback`:
 
-```
-...
-SQL statements to execute by default
-...
--- @myprofile
-...
-SQL statements to execute when 'myprofile' is active
-...
-```
+    ...
+    SQL statements to execute by default
+    ...
+    -- @myprofile
+    ...
+    SQL statements to execute when 'myprofile' is active
+    ...
 
 The profile is activated using either:
+
 * the `DBInit.setProperties(...)`
 * the `dbinit.profile` system property
 
 Rollback sections can also be enabled at profile level if needed:
 
-```
-...
-SQL statements to execute by default
-...
--- @myprofile
-...
-SQL statements to execute when 'myprofile' is active
-...
--- @rollback
-...
-SQL statements to execute when rolling back the changes when no profile is defined
-...
--- @myprofile-rollback
-...
-SQL statements to execute when rolling back the changes when 'myprofile' is active
-...
-```
+    ...
+    SQL statements to execute by default
+    ...
+    -- @myprofile
+    ...
+    SQL statements to execute when 'myprofile' is active
+    ...
+    -- @rollback
+    ...
+    SQL statements to execute when rolling back the changes when no profile is defined
+    ...
+    -- @myprofile-rollback
+    ...
+    SQL statements to execute when rolling back the changes when 'myprofile' is active
+    ...
 
 Several profiles may be defined per file.
 
@@ -205,15 +195,14 @@ Several profiles may be defined per file.
 
 In order to perform a release, execute the following tasks:
 
-* Prepare the release
-```
-mvn release:prepare -Dresume=false -P release
-```
-* Enter the GPG passphrase when prompted
-* Performing the release
-```
-mvn release:perform
-```
+    mvn versions:set -DnewVersion=1.4.0 -DgenerateBackupPoms=false
+    git commit -m "Version 1.4.0"
+    git tag dbinit-1.4.0
+    mvn clean deploy -P release
+    mvn versions:set -DnewVersion=1.4.1-SNAPSHOT -DgenerateBackupPoms=false
+    git commit -m "Starting 1.4.1"
+    git push
+    git push --tags
 
 See also the following resources about releasing and managing GPG signatures:
 
