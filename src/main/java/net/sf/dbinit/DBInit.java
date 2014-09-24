@@ -328,6 +328,11 @@ public class DBInit implements DBExecutor, Runnable {
     private List<DBInitAction> postActions;
 
     /**
+     * Actions to run when applying a patch
+     */
+    private List<? extends DBPatchAction> patchActions;
+
+    /**
      * Applies one patch
      *
      * @param connection Connection to be used
@@ -339,6 +344,16 @@ public class DBInit implements DBExecutor, Runnable {
             // Read the update
             String updatePath = MessageFormat.format(resourceUpdate, patch);
             boolean success = runScript(connection, updatePath);
+            // Applying any suitable patch action
+            if (patchActions != null) {
+                for (DBPatchAction patchAction : patchActions) {
+                    if (patchAction.appliesTo(patch)) {
+                        log.info("Applying action {} for patch {}...", patchAction.getClass().getName(), patch);
+                        patchAction.apply(connection, patch);
+                    }
+                }
+            }
+            // Upgrading the version after success
             if (success) {
                 setVersion(connection, patch);
             }
@@ -880,5 +895,21 @@ public class DBInit implements DBExecutor, Runnable {
         this.postActions = postActions;
     }
 
+    /**
+     * List of actions to run when applying a patch.
+     *
+     * @return List of actions to run when applying a patch (can be <code>null</code>)
+     */
+    public List<? extends DBPatchAction> getPatchActions() {
+        return patchActions;
+    }
 
+    /**
+     * Sets the list of actions to run when applying a patch.
+     *
+     * @param patchActions List of actions to run when applying a patch (can be <code>null</code>)
+     */
+    public void setPatchActions(List<? extends DBPatchAction> patchActions) {
+        this.patchActions = patchActions;
+    }
 }
