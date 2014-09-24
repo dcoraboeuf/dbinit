@@ -348,7 +348,7 @@ public class DBInit implements DBExecutor, Runnable {
             if (patchActions != null) {
                 for (DBPatchAction patchAction : patchActions) {
                     if (patchAction.appliesTo(patch)) {
-                        log.info("Applying action {} for patch {}...", patchAction.getClass().getName(), patch);
+                        log.info("Applying action [{}] for patch [{}]...", patchAction.getDisplayName(), patch);
                         patchAction.apply(connection, patch);
                     }
                 }

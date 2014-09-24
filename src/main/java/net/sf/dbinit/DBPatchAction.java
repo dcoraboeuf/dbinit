@@ -9,6 +9,11 @@ import java.sql.Connection;
 public interface DBPatchAction {
 
     /**
+     * Name for this action (used for logging)
+     */
+    String getDisplayName();
+
+    /**
      * Can this action be applied for a patch number?
      *
      * @param patch Patch number to apply this action for

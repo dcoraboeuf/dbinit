@@ -9,6 +9,11 @@ public class TestDBPatchAction implements DBPatchAction {
     private boolean applied = false;
 
     @Override
+    public String getDisplayName() {
+        return "Test migration";
+    }
+
+    @Override
     public boolean appliesTo(int patch) {
         return patch == 2;
     }
