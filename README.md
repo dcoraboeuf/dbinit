@@ -196,11 +196,11 @@ Several profiles may be defined per file.
 In order to perform a release, execute the following tasks:
 
     mvn versions:set -DnewVersion=1.4.0 -DgenerateBackupPoms=false
-    git commit -m "Version 1.4.0"
+    git commit -am "Version 1.4.0"
     git tag dbinit-1.4.0
     mvn clean deploy -P release
     mvn versions:set -DnewVersion=1.4.1-SNAPSHOT -DgenerateBackupPoms=false
-    git commit -m "Starting 1.4.1"
+    git commit -am "Starting 1.4.1"
     git push
     git push --tags
 
