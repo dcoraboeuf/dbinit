@@ -222,7 +222,7 @@
                             <autoVersionSubmodules>true</autoVersionSubmodules>
                             <useReleaseProfile>false</useReleaseProfile>
                             <releaseProfiles>release</releaseProfiles>
-                            <goals>deploy</goals>
+                            <goals>verify deploy</goals>
                         </configuration>
                     </plugin>
                 </plugins>
